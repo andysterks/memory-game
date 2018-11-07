@@ -1,85 +1,73 @@
 window.onload = function() {
-    let gameState = {
-        score: 0,
-        failedAttempts: 0,
-        gameTileImageSrcArray: [],
-        matchingTileSrcArray: []
-    };
-
-    const constants = {
-        blankImageSrc: 'images/blank.jpeg',
-        animalImages: [
-            'images/monkey.jpeg',
-            'images/elephant.jpeg',
-            'images/frog.jpeg'
-        ]
-    };
+    let score = 0;
+    let failedAttempts = 0;
+    let gameTileImageSrcArray = [];
+    let matchingTileSrcArray = [];
+    let blankImageSrc = 'images/blank.jpeg';
+    let animalImages = [
+        'images/monkey.jpeg',
+        'images/elephant.jpeg',
+        'images/frog.jpeg'
+    ];
 
     let gameTileElements = getImageTileElements(document);
 
-    gameState.gameTileImageSrcArray = [];
-
     gameTileElements.forEach(function() {
-        let possibleAnimalImages = constants.animalImages.filter(function(animalImage) {
-            return gameState.gameTileImageSrcArray .filter(gameTileSrc => gameTileSrc === animalImage).length < 2;
+        let possibleAnimalImages = animalImages.filter(function(animalImage) {
+            return gameTileImageSrcArray .filter(gameTileSrc => gameTileSrc === animalImage).length < 2;
         });
 
-        gameState.gameTileImageSrcArray .push(possibleAnimalImages[Math.floor(Math.random() * possibleAnimalImages.length)]);
+        gameTileImageSrcArray .push(possibleAnimalImages[Math.floor(Math.random() * possibleAnimalImages.length)]);
     });
 
     gameTileElements.forEach(function(gameTileImageElement) {
         gameTileImageElement.addEventListener('click', function(){
-            let clickedTileImagePath = getImagePath(gameTileImageElement, constants.animalImages);
+            let clickedTileImagePath = getImagePath(gameTileImageElement, animalImages);
 
-            let selectedImageTileIsMatched = gameState.matchingTileSrcArray.includes(clickedTileImagePath);
-            if (selectedImageTileIsMatched) { return; }
+            let selectedImageTileIsMatched = matchingTileSrcArray.includes(clickedTileImagePath);
+            if (!selectedImageTileIsMatched) {
+                gameTileImageElement.src = gameTileImageSrcArray[gameTileElements.indexOf(gameTileImageElement)];
 
-            gameTileImageElement.src = gameState.gameTileImageSrcArray[gameTileElements.indexOf(gameTileImageElement)];
+                let gamePiecesImageSrcArray = gameTileElements.map(function(piece) {
+                    return getImagePath(piece, animalImages);
+                });
 
-            let gamePiecesImageSrcArray = gameTileElements.map(function(piece) {
-                return getImagePath(piece, constants.animalImages);
-            });
+                let activeGameTileImgElements = [];
 
-
-
-            let activeGameTileImgElements = [];
-
-            gamePiecesImageSrcArray.forEach(function(gameTileImgSrc){
-                let gameTileIsBlank = gameTileImgSrc.includes(constants.blankImageSrc);
-                if (gameTileIsBlank) {
-                    return;
-                }
-
-                if (gameState.matchingTileSrcArray.length === 0 || !gameState.matchingTileSrcArray.includes(gameTileImgSrc)) {
-                    activeGameTileImgElements.push(gameTileImgSrc);
-                }
-            });
-
-
-            if (activeGameTileImgElements.length % 2 !== 0) { return; }
-
-            const tilesAreMatching = activeGameTileImgElements[0] === activeGameTileImgElements[1];
-            if (tilesAreMatching) {
-                setTimeout(function(){
-                    alert('Matching Pieces! YAYYYY!!!');
-                }, 100);
-                gameState.matchingTileSrcArray.push(activeGameTileImgElements[0]);
-                gameState.score += 1;
-                document.getElementById('score-value').innerHTML = gameState.score.toString();
-                return;
-            }
-
-            setTimeout(function(){
-                alert('Pieces don\'t match...SORRY!!!');
-                gameTileElements.forEach(function(piece) {
-                    if (!isAPreviouslyMatchedPiece(piece, gameState.matchingTileSrcArray)) {
-                        piece.src = constants.blankImageSrc;
+                gamePiecesImageSrcArray.forEach(function(gameTileImgSrc){
+                    let gameTileIsBlank = gameTileImgSrc.includes(blankImageSrc);
+                    if (gameTileIsBlank) {
+                        return;
                     }
-                })
-            }, 100);
-            gameState.failedAttempts += 1;
-            document.getElementById('failed-attempts-value').innerHTML = gameState.failedAttempts.toString();
 
+                    if (matchingTileSrcArray.length === 0 || !matchingTileSrcArray.includes(gameTileImgSrc)) {
+                        activeGameTileImgElements.push(gameTileImgSrc);
+                    }
+                });
+
+                if (activeGameTileImgElements.length % 2 === 0){
+                    const tilesAreMatching = activeGameTileImgElements[0] === activeGameTileImgElements[1];
+                    if (tilesAreMatching) {
+                        setTimeout(function(){
+                            alert('Matching Pieces! YAYYYY!!!');
+                        }, 100);
+                        matchingTileSrcArray.push(activeGameTileImgElements[0]);
+                        score += 1;
+                        document.getElementById('score-value').innerHTML = score.toString();
+                    } else {
+                        setTimeout(function(){
+                            alert('Pieces don\'t match...SORRY!!!');
+                            gameTileElements.forEach(function(piece) {
+                                if (!isAPreviouslyMatchedPiece(piece, matchingTileSrcArray)) {
+                                    piece.src = blankImageSrc;
+                                }
+                            })
+                        }, 100);
+                        failedAttempts += 1;
+                        document.getElementById('failed-attempts-value').innerHTML = failedAttempts.toString();
+                    }
+                }
+            }
         });
     });
 };
@@ -92,23 +80,6 @@ function getImageTileElements(dom){
     }
 
     return gameTileElements;
-}
-
-function getActiveGamePieces(gamePieces, matchedPieces, blankImageSrc) {
-    let activePieces = [];
-
-    gamePieces.forEach(function(gameTileImgSrc){
-        let gameTileIsBlank = gameTileImgSrc.includes(blankImageSrc);
-        if (gameTileIsBlank) {
-            return;
-        }
-
-        if (matchedPieces.length === 0 || !matchedPieces.includes(gameTileImgSrc)) {
-            activePieces.push(gameTileImgSrc);
-        }
-    });
-
-    return activePieces;
 }
 
 function getImagePath(imgElement, animalImages) {
