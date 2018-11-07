@@ -1,41 +1,131 @@
 window.onload = function() {
-    let picture1 = "monkey";
-    let picture2 = "elephant";
-    let picture3 = "monkey";
-    let picture4 = "frog";
-    let picture5 = "frog";
-    let picture6 = "elephant";
+    let gameState = {
+        score: 0,
+        failedAttempts: 0,
+        gameTileImageSrcArray: [],
+        matchingTileSrcArray: []
+    };
 
-    let image1 = document.getElementById('image-1');
-    let image2 = document.getElementById('image-2');
-    let image3 = document.getElementById('image-3');
-    let image4 = document.getElementById('image-4');
-    let image5 = document.getElementById('image-5');
-    let image6 = document.getElementById('image-6');
+    const constants = {
+        blankImageSrc: 'images/blank.jpeg',
+        animalImages: [
+            'images/monkey.jpeg',
+            'images/elephant.jpeg',
+            'images/frog.jpeg'
+        ]
+    };
 
-    image1.addEventListener('click', function(){
+    let gameTileElements = getImageTileElements(document);
 
+    gameState.gameTileImageSrcArray = initializeGameTileSrcArray(gameTileElements, constants.animalImages);
+
+    gameTileElements.forEach(function(gameTileImageElement) {
+        gameTileImageElement.addEventListener('click', function(){
+            let clickedTileImagePath = getImagePath(gameTileImageElement, constants.animalImages);
+
+            let selectedImageTileIsMatched = gameState.matchingTileSrcArray.includes(clickedTileImagePath);
+            if (selectedImageTileIsMatched) { return; }
+
+            gameTileImageElement.src = gameState.gameTileImageSrcArray[gameTileElements.indexOf(gameTileImageElement)];
+
+            let gamePiecesImageSrcArray = gameTileElements.map(function(piece) {
+                return getImagePath(piece, constants.animalImages);
+            });
+            let activeGameTileImgElements = getActiveGamePieces(
+                gamePiecesImageSrcArray,
+                gameState.matchingTileSrcArray,
+                constants.blankImageSrc
+            );
+
+            if (activeGameTileImgElements.length % 2 !== 0) { return; }
+
+            const tilesAreMatching = activeGameTileImgElements[0] === activeGameTileImgElements[1];
+            if (tilesAreMatching) {
+                setTimeout(function(){
+                    alert('Matching Pieces! YAYYYY!!!');
+                }, 100);
+                gameState.matchingTileSrcArray.push(activeGameTileImgElements[0]);
+                gameState.score += 1;
+                document.getElementById('score-value').innerHTML = gameState.score.toString();
+                return;
+            }
+
+            setTimeout(function(){
+                alert('Pieces don\'t match...SORRY!!!');
+                gameTileElements.forEach(function(piece) {
+                    if (!isAPreviouslyMatchedPiece(piece, gameState.matchingTileSrcArray)) {
+                        piece.src = constants.blankImageSrc;
+                    }
+                })
+            }, 100);
+            gameState.failedAttempts += 1;
+            document.getElementById('failed-attempts-value').innerHTML = gameState.failedAttempts.toString();
+
+        });
     });
-
-    image2.addEventListener('click', function(){
-
-    });
-
-    image3.addEventListener('click', function(){
-
-    });
-
-    image4.addEventListener('click', function(){
-
-    });
-
-    image5.addEventListener('click', function(){
-
-    });
-
-    image6.addEventListener('click', function(){
-
-    });
-
-    // add event listeners
 };
+
+function initializeGameTileSrcArray(gameTileElements, animalImages) {
+    let gameTileSrcArray = [];
+
+    gameTileElements.forEach(function() {
+        let possibleAnimalImages = animalImages.filter(function(animalImage) {
+            return gameTileSrcArray.filter(gameTileSrc => gameTileSrc === animalImage).length < 2;
+        });
+
+        gameTileSrcArray.push(possibleAnimalImages[Math.floor(Math.random() * possibleAnimalImages.length)]);
+    });
+
+    return gameTileSrcArray;
+}
+
+function getImageTileElements(dom){
+    let gameTileElements = [];
+
+    for(let gameTileElement of dom.getElementsByClassName('game-tile-image')){
+        gameTileElements.push(gameTileElement);
+    }
+
+    return gameTileElements;
+}
+
+function getActiveGamePieces(gamePieces, matchedPieces, blankImageSrc) {
+    let activePieces = [];
+
+    gamePieces.forEach(function(gameTileImgSrc){
+        let gameTileIsBlank = gameTileImgSrc.includes(blankImageSrc);
+        if (gameTileIsBlank) {
+            return;
+        }
+
+        if (matchedPieces.length === 0 || !matchedPieces.includes(gameTileImgSrc)) {
+            activePieces.push(gameTileImgSrc);
+        }
+    });
+
+    return activePieces;
+}
+
+function getImagePath(imgElement, animalImages) {
+    let relativeImgSrc = imgElement.src;
+
+    animalImages.forEach(function(animalImage){
+        if (imgElement.src.includes(animalImage)){
+            relativeImgSrc = animalImage;
+        }
+    });
+
+    return relativeImgSrc;
+}
+
+function isAPreviouslyMatchedPiece(gamePiece, matchedGamePieces) {
+    let isPreviouslyMatchedPiece = false;
+
+    matchedGamePieces.forEach(function(matchedPiece) {
+        if (gamePiece.src.includes(matchedPiece)) {
+            isPreviouslyMatchedPiece = true;
+        }
+    });
+
+    return isPreviouslyMatchedPiece;
+}
