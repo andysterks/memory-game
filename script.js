@@ -17,7 +17,15 @@ window.onload = function() {
 
     let gameTileElements = getImageTileElements(document);
 
-    gameState.gameTileImageSrcArray = initializeGameTileSrcArray(gameTileElements, constants.animalImages);
+    gameState.gameTileImageSrcArray = [];
+
+    gameTileElements.forEach(function() {
+        let possibleAnimalImages = constants.animalImages.filter(function(animalImage) {
+            return gameState.gameTileImageSrcArray .filter(gameTileSrc => gameTileSrc === animalImage).length < 2;
+        });
+
+        gameState.gameTileImageSrcArray .push(possibleAnimalImages[Math.floor(Math.random() * possibleAnimalImages.length)]);
+    });
 
     gameTileElements.forEach(function(gameTileImageElement) {
         gameTileImageElement.addEventListener('click', function(){
@@ -31,11 +39,22 @@ window.onload = function() {
             let gamePiecesImageSrcArray = gameTileElements.map(function(piece) {
                 return getImagePath(piece, constants.animalImages);
             });
-            let activeGameTileImgElements = getActiveGamePieces(
-                gamePiecesImageSrcArray,
-                gameState.matchingTileSrcArray,
-                constants.blankImageSrc
-            );
+
+
+
+            let activeGameTileImgElements = [];
+
+            gamePiecesImageSrcArray.forEach(function(gameTileImgSrc){
+                let gameTileIsBlank = gameTileImgSrc.includes(constants.blankImageSrc);
+                if (gameTileIsBlank) {
+                    return;
+                }
+
+                if (gameState.matchingTileSrcArray.length === 0 || !gameState.matchingTileSrcArray.includes(gameTileImgSrc)) {
+                    activeGameTileImgElements.push(gameTileImgSrc);
+                }
+            });
+
 
             if (activeGameTileImgElements.length % 2 !== 0) { return; }
 
@@ -64,20 +83,6 @@ window.onload = function() {
         });
     });
 };
-
-function initializeGameTileSrcArray(gameTileElements, animalImages) {
-    let gameTileSrcArray = [];
-
-    gameTileElements.forEach(function() {
-        let possibleAnimalImages = animalImages.filter(function(animalImage) {
-            return gameTileSrcArray.filter(gameTileSrc => gameTileSrc === animalImage).length < 2;
-        });
-
-        gameTileSrcArray.push(possibleAnimalImages[Math.floor(Math.random() * possibleAnimalImages.length)]);
-    });
-
-    return gameTileSrcArray;
-}
 
 function getImageTileElements(dom){
     let gameTileElements = [];
